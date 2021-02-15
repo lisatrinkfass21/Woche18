@@ -10,6 +10,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Note">
         <activity android:name=".MainActivity">
+            android:windowSoftInputMode="adjustNothing">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

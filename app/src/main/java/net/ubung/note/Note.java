@@ -10,13 +10,13 @@ public class Note {
     private Date date = new Date();
     private String name;
     private String detail;
-    static DateFormat dtf;
+    static DateFormat dtf = new SimpleDateFormat("dd.MM.yyyy hh:mm");
 
     public Note(Date date, String name, String detail) {
         this.date = date;
         this.name = name;
         this.detail = detail;
-        dtf = new SimpleDateFormat("dd.MM.yyyy hh:mm");
+
     }
 
     public Date getDate() {

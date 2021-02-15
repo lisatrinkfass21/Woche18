@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class ListViewAdapter extends BaseAdapter {
@@ -40,11 +41,14 @@ public class ListViewAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-
+        Date date = new Date();
         Note note = notes.get(position);
         View listItem = (convertView == null)?
                 inflater.inflate(this.listViewItemLayoutId,null) : convertView;
         ((TextView) listItem.findViewById(R.id.time)).setText(Note.dtf.format(note.getDate()));
+        if(date.compareTo(note.getDate()) > 1){
+            listItem.setBackgroundColor(0xFF00FF00);
+        }
         ((TextView) listItem.findViewById(R.id.note)).setText(note.getName());
         return listItem;
     }

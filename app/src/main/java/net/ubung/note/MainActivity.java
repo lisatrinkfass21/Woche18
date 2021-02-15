@@ -4,11 +4,15 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.res.AssetManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -28,6 +32,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.time.Month;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -46,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         lv = findViewById(R.id.listView);
         loadNotes();
+        bindAdapterToListView(lv);
     }
 
     @Override
@@ -69,22 +75,70 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void bindAdapterToListView(ListView listView) {
-        lva = new ListView(this, R.layout.listview_item, notes);
+      lva = new ListViewAdapter(this, R.layout.listview_item, notes);
         listView.setAdapter(lva);
     }
 
-    private void addNote() {
+    private void addNote() {//fertig
         LinearLayout linearLayout = new LinearLayout(this);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout linearLayout2 = new LinearLayout(this);
-        linearLayout2.setOrientation(LinearLayout.HORIZONTAL);
-        DatePicker datePicker = new DatePicker(MainActivity.this);
-        TimePicker timePicker = new TimePicker(MainActivity.this);
-        linearLayout2.addView(datePicker);
-        linearLayout2.addView(timePicker);
+
+
+        final EditText date = new EditText(this);
+        date.setHint("Datum");
+        Button but = new Button(this);
+        but.setText("wähle Datum");
+        but.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final Calendar c = Calendar.getInstance();
+                int y = c.get(Calendar.YEAR);
+                int m = c.get(Calendar.MONTH);
+                int d = c.get(Calendar.DAY_OF_MONTH);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    DatePickerDialog datePickerDialog = new DatePickerDialog(MainActivity.this,
+                            new DatePickerDialog.OnDateSetListener() {
+
+                                @Override
+                                public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                                    date.setText(dayOfMonth + "."+(dayOfMonth+1)+"."+year);
+                                };
+                            },y,m,d); datePickerDialog.show();
+                }
+            }});
+
+
+        final EditText Zeit = new EditText(this);
+        Zeit.setHint("Zeit");
+        Button but2 = new Button(this);
+        but2.setText("wähle Zeit");
+        but2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final Calendar c = Calendar.getInstance();
+                int m = c.get(Calendar.MINUTE);
+                int h = c.get(Calendar.HOUR);
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    TimePickerDialog timePickerDialog = new TimePickerDialog(MainActivity.this,
+                            new TimePickerDialog.OnTimeSetListener() {
+                                @Override
+                                public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                                    Zeit.setText(hourOfDay+":"+minute);
+                                }
+                            },h,m,false);timePickerDialog.show();
+            }}});
+
+
+
         final EditText titel = new EditText(this);
+        titel.setHint("Titel");
         final EditText detail = new EditText(this);
-        linearLayout.addView(linearLayout2);
+        detail.setHint("Detail");
+        linearLayout.addView(date);
+        linearLayout.addView(but);
+        linearLayout.addView(Zeit);
+        linearLayout.addView(but2);
         linearLayout.addView(titel);
         linearLayout.addView(detail);
 
@@ -94,22 +148,10 @@ public class MainActivity extends AppCompatActivity {
                 .setView(linearLayout)
         .setPositiveButton("ADD", (dialog, which) -> {
             try {
-                int month = datePicker.getMonth();
-                int year = datePicker.getYear();
-                int day = datePicker.getDayOfMonth();
-                int hour;
-                int minute;
-                if (Build.VERSION.SDK_INT >= 23 ){
-                    hour = timePicker.getHour();
-                   minute = timePicker.getMinute();
-                }
-                else{
-                    hour = timePicker.getCurrentHour();
-                    minute = timePicker.getCurrentMinute();
-                }
-                String date_String = day+"."+month+"."+year+" "+hour+":"+minute;
-                Date date = Note.dtf.parse(date_String);
-                Note note = new Note(date, titel.getText().toString(),detail.getText().toString());
+
+                String date_String =  date.getText().toString()+" "+Zeit.getText().toString();
+                Date datu = Note.dtf.parse(date_String);
+                Note note = new Note(datu, titel.getText().toString(),detail.getText().toString());
                 notes.add(note);
 
             } catch (ParseException e) {
@@ -120,9 +162,12 @@ public class MainActivity extends AppCompatActivity {
                 .show();
 
 
+        bindAdapterToListView(lv);
+
+
     }
 
-    private void saveNotes() {
+    private void saveNotes() {//noch nicht fertig
         AssetManager assets = getAssets();
         //assets.
         try {
