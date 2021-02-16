@@ -1,6 +1,7 @@
 package net.ubung.note;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,8 +47,8 @@ public class ListViewAdapter extends BaseAdapter {
         View listItem = (convertView == null)?
                 inflater.inflate(this.listViewItemLayoutId,null) : convertView;
         ((TextView) listItem.findViewById(R.id.time)).setText(Note.dtf.format(note.getDate()));
-        if(date.compareTo(note.getDate()) > 1){
-            listItem.setBackgroundColor(0xFF00FF00);
+        if(date.after(note.getDate())){
+            listItem.setBackgroundColor(Color.parseColor("#FF3030"));
         }
         ((TextView) listItem.findViewById(R.id.note)).setText(note.getName());
 
