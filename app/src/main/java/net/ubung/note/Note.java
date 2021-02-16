@@ -60,4 +60,20 @@ public class Note {
         }
         return null;
     }
+
+    public String getDateString(){
+        String date = dtf.format(this.date);
+        String[] splittedDate = date.split(" ");
+        return splittedDate[0];
+    }
+
+    public String getTimeString(){
+        String date = dtf.format(this.date);
+        String[] splittedDate = date.split(" ");
+        return splittedDate[1];
+    }
+
+    public String getFullDateString(){
+        return dtf.format(this.date);
+    }
 }

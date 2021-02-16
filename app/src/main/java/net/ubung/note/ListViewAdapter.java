@@ -50,6 +50,7 @@ public class ListViewAdapter extends BaseAdapter {
             listItem.setBackgroundColor(0xFF00FF00);
         }
         ((TextView) listItem.findViewById(R.id.note)).setText(note.getName());
+
         return listItem;
     }
 }
