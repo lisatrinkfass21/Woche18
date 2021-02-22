@@ -4,7 +4,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.DatePickerDialog;
+import android.app.Dialog;
 import android.app.TimePickerDialog;
+import android.content.DialogInterface;
 import android.content.res.AssetManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -16,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -43,11 +46,12 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final static String FILE = "notes.csv";
+    private final static String FILE = "notes.txt";
     ListViewAdapter lva;
     List<Note> notes = new ArrayList<>();
     ListView lv;
@@ -60,6 +64,52 @@ public class MainActivity extends AppCompatActivity {
         registerForContextMenu(lv);
         loadNotes();
         bindAdapterToListView(lv);
+
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Object itemObject = parent.getAdapter().getItem(position);
+                Note itemDto = (Note) itemObject;
+
+                CheckBox itemCheckbox = (CheckBox) view.findViewById(R.id.checkbox);
+                if(itemDto.getChecked()){
+                    itemCheckbox.setChecked(false);
+                    itemDto.setChecked(false);
+                }else{
+                    itemCheckbox.setChecked(true);
+                    itemDto.setChecked(true);
+                }
+
+            }
+        });
+
+        Button selectButton = (Button)findViewById(R.id.delete_selected_rows);
+        selectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+                alertDialog.setMessage("Are you sure to remove selected listview items?");
+                alertDialog.setButton(Dialog.BUTTON_POSITIVE, "Confirm", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        int size = notes.size();
+                        for (int i = 0; i < size; i++){
+                            Note note = notes.get(i);
+                           if(note.getChecked()){
+                               notes.remove(i);
+                               i--;
+                               size--;
+
+                           }
+                        }
+                        bindAdapterToListView(lv);
+                    }
+                });
+                alertDialog.show();
+            }
+        });
+
+
     }
 
     @Override
@@ -209,7 +259,7 @@ public class MainActivity extends AppCompatActivity {
 
                         String date_String = date.getText().toString() + " " + Zeit.getText().toString();
                         Date datu = Note.dtf.parse(date_String);
-                        Note note = new Note(datu, titel.getText().toString(), detail.getText().toString());
+                        Note note = new Note(titel.getText().toString(), detail.getText().toString(), datu, false);
                         notes.add(note);
                         notes.remove(temp);
                         lv = findViewById(R.id.listView);
@@ -314,7 +364,7 @@ public class MainActivity extends AppCompatActivity {
 
                         String date_String = date.getText().toString() + " " + Zeit.getText().toString();
                         Date datu = Note.dtf.parse(date_String);
-                        Note note = new Note(datu, titel.getText().toString(), detail.getText().toString());
+                        Note note = new Note( titel.getText().toString(), detail.getText().toString(), datu, false);
                         notes.add(note);
                         lv = findViewById(R.id.listView);
                         bindAdapterToListView(lv);
@@ -335,8 +385,14 @@ public class MainActivity extends AppCompatActivity {
         try {
             FileOutputStream fos = openFileOutput(FILE, MODE_PRIVATE);
             PrintWriter out = new PrintWriter(new OutputStreamWriter(fos));
+
             for(Note n : notes){
-                out.println(n.toString());
+                out.println("new Object");
+                out.println("name:"+n.getName());
+                out.println("detail:"+n.getDetail());
+                out.println("date:"+n.getFullDateString());
+                out.println("checked:"+n.getChecked());
+
             }
             out.flush();
             out.close();
@@ -351,14 +407,19 @@ public class MainActivity extends AppCompatActivity {
         String line;
         int counter = 0;
             try (BufferedReader br = new BufferedReader(new InputStreamReader(openFileInput(FILE)))) {
-
+                    line = br.readLine();
                 while ((line = br.readLine()) != null) {
-                    Note n = Note.deser(line);
-                    if (n != null) {
-                        notes.add(n);
-                        counter++;
-                    } else {
-                        Toast.makeText(getApplicationContext(), "parsen hat nicht funktioniert", Toast.LENGTH_LONG).show();
+                    String name = "";
+                    Date date  =  new Date();
+                    boolean checked = false;
+                    String detail = "";
+                    String[] splittedLine = line.split(":");
+                    switch (splittedLine[0]){
+                        case "name": name = splittedLine[1]; break;
+                        case "date": date = Note.dtf.parse(splittedLine[1]); break;
+                        case "detail" : detail  = splittedLine[1]; break;
+                        case "checked" : checked = Boolean.parseBoolean(splittedLine[1]);break;
+                        case "new Object": Note note = new Note(name,detail,date,checked); notes.add(note); counter++; break;
                     }
 
                 }
@@ -367,11 +428,13 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (ParseException e) {
+                e.printStackTrace();
             }
 
-            if(counter==0)
+        if(counter==0)
          {
-            Toast.makeText(getApplicationContext(), "CSV noch nicht vorhanden", Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "noch keine Tasks vorhanden", Toast.LENGTH_LONG).show();
         }
 
     }

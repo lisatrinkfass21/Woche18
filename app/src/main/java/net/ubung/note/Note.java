@@ -6,26 +6,23 @@ import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-public class Note {
-    private Date date = new Date();
+public class Note {//Task
+
     private String name;
     private String detail;
     static DateFormat dtf = new SimpleDateFormat("dd.MM.yyyy hh:mm");
+    private Date datebis = new Date();
+    private boolean done;
 
-    public Note(Date date, String name, String detail) {
-        this.date = date;
+
+    public Note(String name, String detail, Date datebis, boolean done) {
         this.name = name;
         this.detail = detail;
+        this.datebis = datebis;
+        this.done = done;
 
     }
 
-    public Date getDate() {
-        return date;
-    }
-
-    public void setDate(Date date) {
-        this.date = date;
-    }
 
     public String getName() {
         return name;
@@ -43,37 +40,37 @@ public class Note {
         this.detail = detail;
     }
 
-    @Override
-    public String toString() {
-        return dtf.format(date) + "," + this.name + "," + this.detail;
+    public Date getDatebis() {
+        return datebis;
     }
 
-    public static Note deser(String no) {
-        try {
-            String[] splittedNote = no.split(",");
-            String name = splittedNote[1];
-            String detail = splittedNote[2];
-            Date date = dtf.parse(splittedNote[0]);
-            return new Note(date,name, detail);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        return null;
+    public void setChecked(boolean done){
+        this.done = done;
     }
+
+    public boolean getChecked(){
+        return done;
+    }
+
+    public void setDatebis(Date datebis) {
+        this.datebis = datebis;
+    }
+
+
 
     public String getDateString(){
-        String date = dtf.format(this.date);
+        String date = dtf.format(this.datebis);
         String[] splittedDate = date.split(" ");
         return splittedDate[0];
     }
 
     public String getTimeString(){
-        String date = dtf.format(this.date);
+        String date = dtf.format(this.datebis);
         String[] splittedDate = date.split(" ");
         return splittedDate[1];
     }
 
     public String getFullDateString(){
-        return dtf.format(this.date);
+        return dtf.format(this.datebis);
     }
 }

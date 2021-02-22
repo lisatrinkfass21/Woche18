@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.CheckBox;
 import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
@@ -46,11 +47,10 @@ public class ListViewAdapter extends BaseAdapter {
         Note note = notes.get(position);
         View listItem = (convertView == null)?
                 inflater.inflate(this.listViewItemLayoutId,null) : convertView;
-        ((TextView) listItem.findViewById(R.id.time)).setText(Note.dtf.format(note.getDate()));
-        if(date.after(note.getDate())){
-            listItem.setBackgroundColor(Color.parseColor("#FF3030"));
-        }
+        CheckBox cb = (CheckBox) listItem.findViewById(R.id.checkbox);
+        ((TextView) listItem.findViewById(R.id.time)).setText(Note.dtf.format(note.getDatebis()));
         ((TextView) listItem.findViewById(R.id.note)).setText(note.getName());
+        cb.setChecked(note.getChecked());
 
         return listItem;
     }
