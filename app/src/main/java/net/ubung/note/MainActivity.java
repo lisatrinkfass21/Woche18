@@ -7,8 +7,11 @@ import androidx.preference.PreferenceManager;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.TimePickerDialog;
 import android.app.UiModeManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -102,6 +105,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+
         Button selectButton = (Button) findViewById(R.id.delete_selected_rows);
         selectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -118,13 +123,11 @@ public class MainActivity extends AppCompatActivity {
                                 notes.remove(i);
                                 i--;
                                 size = notes.size();
-
-
                             }
                         }
                         Collections.sort(notes);
                         bindAdapterToListView(lv);
-
+                        saveNotes();
                     }
                 });
                 alertDialog.show();
@@ -132,6 +135,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+    }
+
+    public void notifyDate(Note note){
+        if(!note.getChecked()) {
+            NotificationManager notif = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            Notification notify = new Notification.Builder(getApplicationContext()).setContentTitle("Task zu erledigen")
+                    .setContentText(note.getName()+" soll erledigt werden").setSmallIcon(R.drawable.ic_launcher_foreground).build();
+            notify.flags |= Notification.FLAG_AUTO_CANCEL;
+            notif.notify(0,notify);
+        }
     }
 
     private void preferenceChanged(SharedPreferences sharedPrefs, String key) {
@@ -173,6 +186,8 @@ public class MainActivity extends AppCompatActivity {
             return temp;
         }
     }
+
+
 
     private void setDarkModer(boolean value) {//funktioniert noch nicht
         View mainView = findViewById(R.id.screen1);
@@ -566,3 +581,6 @@ public class MainActivity extends AppCompatActivity {
 // - automatische speicherungen nach änderungen der listview
 // - abgelaufene Tasks in roter Schrift
 // - preferences (Anzeige mit abgelaufenen / ohne abgelaufenen Tasks)
+
+//- pushnotification funktioniert nicht ganz
+//- darktheme auch noch nicht ganz
