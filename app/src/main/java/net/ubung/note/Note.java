@@ -4,9 +4,11 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 
-public class Note {//Task
+public class Note implements Comparable<Note> {//Task
 
     private String name;
     private String detail;
@@ -72,5 +74,10 @@ public class Note {//Task
 
     public String getFullDateString(){
         return dtf.format(this.datebis);
+    }
+
+    @Override
+    public int compareTo(Note o) {
+        return this.datebis.compareTo(o.getDatebis());
     }
 }

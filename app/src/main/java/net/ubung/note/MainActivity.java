@@ -2,12 +2,18 @@ package net.ubung.note;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.preference.PreferenceManager;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
+import android.app.UiModeManager;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.AssetManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.ContextMenu;
@@ -44,6 +50,9 @@ import java.time.Month;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -54,7 +63,12 @@ public class MainActivity extends AppCompatActivity {
     private final static String FILE = "notes.txt";
     ListViewAdapter lva;
     List<Note> notes = new ArrayList<>();
+
     ListView lv;
+
+    private List<Note> temp = new ArrayList<>();
+    private SharedPreferences prefs;
+    private SharedPreferences.OnSharedPreferenceChangeListener prefsChangeListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +77,12 @@ public class MainActivity extends AppCompatActivity {
         lv = findViewById(R.id.listView);
         registerForContextMenu(lv);
         loadNotes();
+        Collections.sort(notes);
         bindAdapterToListView(lv);
+
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefsChangeListener = (sharedPrefs, key) -> preferenceChanged(sharedPrefs, key);
+        prefs.registerOnSharedPreferenceChangeListener(prefsChangeListener);
 
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -72,10 +91,10 @@ public class MainActivity extends AppCompatActivity {
                 Note itemDto = (Note) itemObject;
 
                 CheckBox itemCheckbox = (CheckBox) view.findViewById(R.id.checkbox);
-                if(itemDto.getChecked()){
+                if (itemDto.getChecked()) {
                     itemCheckbox.setChecked(false);
                     itemDto.setChecked(false);
-                }else{
+                } else {
                     itemCheckbox.setChecked(true);
                     itemDto.setChecked(true);
                 }
@@ -83,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Button selectButton = (Button)findViewById(R.id.delete_selected_rows);
+        Button selectButton = (Button) findViewById(R.id.delete_selected_rows);
         selectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -93,16 +112,19 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         int size = notes.size();
-                        for (int i = 0; i < size; i++){
+                        for (int i = 0; i < size; i++) {
                             Note note = notes.get(i);
-                           if(note.getChecked()){
-                               notes.remove(i);
-                               i--;
-                               size--;
+                            if (note.getChecked()) {
+                                notes.remove(i);
+                                i--;
+                                size = notes.size();
 
-                           }
+
+                            }
                         }
+                        Collections.sort(notes);
                         bindAdapterToListView(lv);
+
                     }
                 });
                 alertDialog.show();
@@ -111,6 +133,75 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+    private void preferenceChanged(SharedPreferences sharedPrefs, String key) {
+
+        boolean value = sharedPrefs.getBoolean(key, false);
+        if (key.equals("Darktmode")) {
+            setDarkModer(value);
+        } else if (key.equals("anzeigeDateBefore")) {
+            temp.addAll(anzeigeDatebefore(value, temp));
+
+        }
+    }
+
+    private List<Note> anzeigeDatebefore(boolean value, List<Note> temp) {
+        List<Note> alternativeNotes = new ArrayList<>();
+        if (value == false) {
+            alternativeNotes.clear();
+            alternativeNotes.addAll(notes);
+            notes.clear();
+            for (Note note : alternativeNotes) {
+                int diff = note.getDatebis().compareTo(new Date());
+                if (diff > -1) {
+                    notes.add(note);
+                }
+            }
+            Collections.sort(notes);
+            lv = findViewById(R.id.listView);
+            bindAdapterToListView(lv);
+            return alternativeNotes;
+        } else {
+            alternativeNotes.addAll(temp);
+            for (Note note : alternativeNotes)
+                if (!notes.contains(note)) {
+                    notes.add(note);
+                }
+            lv = findViewById(R.id.listView);
+            Collections.sort(notes);
+            bindAdapterToListView(lv);
+            return temp;
+        }
+    }
+
+    private void setDarkModer(boolean value) {//funktioniert noch nicht
+        View mainView = findViewById(R.id.screen1);
+        View settingsview = findViewById(R.id.screen2);
+        View listviewitem = findViewById(R.id.screen3);
+        View root1 = mainView.getRootView();
+        View root2  = listviewitem.getRootView();
+        View root3 = settingsview.getRootView();
+        TextView time = findViewById(R.id.time);
+        TextView name = findViewById(R.id.note);
+        if(value) {
+            root1.setBackgroundColor(Color.BLACK);
+            root2.setBackgroundColor(Color.BLACK);
+            name.setTextColor(Color.WHITE);
+            time.setTextColor(Color.WHITE);
+            root3.setBackgroundColor(Color.BLACK);
+
+
+        }else{
+            root1.setBackgroundColor(Color.WHITE);
+            root2.setBackgroundColor(Color.WHITE);
+            name.setTextColor(Color.BLACK);
+            time.setTextColor(Color.BLACK);
+            root3.setBackgroundColor(Color.WHITE);
+        }
+
+    }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -128,6 +219,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.add:
                 addNote();
                 break;
+            case R.id.preffs:
+                Intent intent = new Intent(this, MySettingsActivity.class);
+                startActivityForResult(intent, 1);
         }
         return super.onOptionsItemSelected(item);
     }
@@ -162,11 +256,14 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout ll = new LinearLayout(this);
         ll.setOrientation(LinearLayout.VERTICAL);
         TextView date = new TextView(this);
-        date.setText("Date: "+temp.getFullDateString());
+        date.setText("Date: " + temp.getFullDateString());
         TextView titel = new TextView(this);
-        titel.setText("Title: "+temp.getName());
+        titel.setText("Title: " + temp.getName());
         TextView detail = new TextView(this);
-        detail.setText("Detail: "+temp.getDetail());
+        detail.setText("Detail: " + temp.getDetail());
+        TextView checked = new TextView(this);
+        checked.setText("Done: " + String.valueOf(temp.getChecked()));
+
 
         ll.addView(date);
         ll.addView(titel);
@@ -263,7 +360,9 @@ public class MainActivity extends AppCompatActivity {
                         notes.add(note);
                         notes.remove(temp);
                         lv = findViewById(R.id.listView);
+                        Collections.sort(notes);
                         bindAdapterToListView(lv);
+                        saveNotes();
 
                     } catch (ParseException e) {
                     }
@@ -273,12 +372,12 @@ public class MainActivity extends AppCompatActivity {
                 .show();
 
 
-
     }
 
     private void deleteNote(int position) {
         notes.remove(position);
         bindAdapterToListView(lv);
+        saveNotes();
 
     }
 
@@ -364,10 +463,16 @@ public class MainActivity extends AppCompatActivity {
 
                         String date_String = date.getText().toString() + " " + Zeit.getText().toString();
                         Date datu = Note.dtf.parse(date_String);
-                        Note note = new Note( titel.getText().toString(), detail.getText().toString(), datu, false);
-                        notes.add(note);
-                        lv = findViewById(R.id.listView);
-                        bindAdapterToListView(lv);
+                        if (titel.getText().toString().equals("") || detail.getText().toString().equals("")) {
+                            Toast.makeText(this, "Eingabe ist nicht vollständig", Toast.LENGTH_LONG).show();
+                        } else {
+                            Note note = new Note(titel.getText().toString(), detail.getText().toString(), datu, false);
+                            notes.add(note);
+                            lv = findViewById(R.id.listView);
+                            Collections.sort(notes);
+                            bindAdapterToListView(lv);
+                            saveNotes();
+                        }
 
 
                     } catch (ParseException e) {
@@ -386,12 +491,13 @@ public class MainActivity extends AppCompatActivity {
             FileOutputStream fos = openFileOutput(FILE, MODE_PRIVATE);
             PrintWriter out = new PrintWriter(new OutputStreamWriter(fos));
 
-            for(Note n : notes){
-                out.println("new Object");
-                out.println("name:"+n.getName());
-                out.println("detail:"+n.getDetail());
-                out.println("date:"+n.getFullDateString());
-                out.println("checked:"+n.getChecked());
+            for (Note n : notes) {
+
+                out.println("name=" + n.getName());
+                out.println("detail=" + n.getDetail());
+                out.println("date=" + n.getFullDateString());
+                out.println("checked=" + n.getChecked());
+                out.println("new=null");
 
             }
             out.flush();
@@ -404,38 +510,59 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void loadNotes() {
+        String name = "";
+        Date date = new Date();
+        boolean checked = false;
+        String detail = "";
         String line;
         int counter = 0;
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(openFileInput(FILE)))) {
-                    line = br.readLine();
-                while ((line = br.readLine()) != null) {
-                    String name = "";
-                    Date date  =  new Date();
-                    boolean checked = false;
-                    String detail = "";
-                    String[] splittedLine = line.split(":");
-                    switch (splittedLine[0]){
-                        case "name": name = splittedLine[1]; break;
-                        case "date": date = Note.dtf.parse(splittedLine[1]); break;
-                        case "detail" : detail  = splittedLine[1]; break;
-                        case "checked" : checked = Boolean.parseBoolean(splittedLine[1]);break;
-                        case "new Object": Note note = new Note(name,detail,date,checked); notes.add(note); counter++; break;
-                    }
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(openFileInput(FILE)))) {
+            while ((line = br.readLine()) != null) {
 
+                String[] splittedLine = line.split("=");
+                switch (splittedLine[0]) {
+                    case "name":
+                        name = splittedLine[1];
+                        break;
+                    case "date":
+                        date = Note.dtf.parse(splittedLine[1]);
+                        break;
+                    case "detail":
+                        detail = splittedLine[1];
+                        break;
+                    case "checked":
+                        checked = Boolean.parseBoolean(splittedLine[1]);
+                        break;
+                    case "new":
+                        if (!name.equals("")) {
+                            Note note = new Note(name, detail, date, checked);
+                            notes.add(note);
+                            counter++;
+                        }
+                        break;
+                    default:
+                        System.out.println("default" + splittedLine[0]);
                 }
 
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ParseException e) {
-                e.printStackTrace();
             }
 
-        if(counter==0)
-         {
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        if (counter == 0) {
             Toast.makeText(getApplicationContext(), "noch keine Tasks vorhanden", Toast.LENGTH_LONG).show();
         }
 
     }
 }
+
+//bonus:
+// - zeitliche sortierung(vorher zu erledigende tasks oben)
+// - automatische speicherungen nach änderungen der listview
+// - abgelaufene Tasks in roter Schrift
+// - preferences (Anzeige mit abgelaufenen / ohne abgelaufenen Tasks)

@@ -15,5 +15,11 @@
         android:title="add"
         app:showAsAction="always"/>
 
+    <item
+        android:id="@+id/preffs"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:title="settings"
+        app:showAsAction="always"/>
+
 
 </menu>

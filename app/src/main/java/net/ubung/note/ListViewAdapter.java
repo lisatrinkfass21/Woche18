@@ -9,6 +9,8 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -51,6 +53,13 @@ public class ListViewAdapter extends BaseAdapter {
         ((TextView) listItem.findViewById(R.id.time)).setText(Note.dtf.format(note.getDatebis()));
         ((TextView) listItem.findViewById(R.id.note)).setText(note.getName());
         cb.setChecked(note.getChecked());
+        if(note.getDatebis().compareTo(date)<0){
+            TextView time = listItem.findViewById(R.id.time);
+            time.setTextColor(Color.RED);
+            TextView name = listItem.findViewById(R.id.note);
+            name.setTextColor(Color.RED);
+
+        }
 
         return listItem;
     }
