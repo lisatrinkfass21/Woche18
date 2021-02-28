@@ -3,12 +3,14 @@ package net.ubung.note;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.app.NotificationCompat;
 import androidx.preference.PreferenceManager;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.app.UiModeManager;
 import android.content.Context;
@@ -19,6 +21,7 @@ import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.format.DateUtils;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
@@ -137,15 +140,26 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void notifyDate(Note note){
-        if(!note.getChecked()) {
-            NotificationManager notif = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            Notification notify = new Notification.Builder(getApplicationContext()).setContentTitle("Task zu erledigen")
-                    .setContentText(note.getName()+" soll erledigt werden").setSmallIcon(R.drawable.ic_launcher_foreground).build();
-            notify.flags |= Notification.FLAG_AUTO_CANCEL;
-            notif.notify(0,notify);
+    public void checkNotify(Note note){
+        if (DateUtils.isToday(note.getDatebis().getTime())) {
+            if(!note.getChecked()) {
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.drawable.ic_launcher_foreground)
+                        .setContentTitle("Task zu erledigen")
+                        .setContentText(note.getName());
+                Intent notifint = new Intent(this, MainActivity.class);
+                PendingIntent contint = PendingIntent.getActivity(this,0,notifint, PendingIntent.FLAG_CANCEL_CURRENT);
+                NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                manager.notify(0, builder.build());
+                System.out.println("notify");
+                Toast.makeText(getApplicationContext(), note.getName()+" muss erledigt werden", Toast.LENGTH_LONG).show();
+
+
+            }
         }
     }
+
+
 
     private void preferenceChanged(SharedPreferences sharedPrefs, String key) {
 
@@ -199,19 +213,19 @@ public class MainActivity extends AppCompatActivity {
         TextView time = findViewById(R.id.time);
         TextView name = findViewById(R.id.note);
         if(value) {
-            root1.setBackgroundColor(Color.BLACK);
-            root2.setBackgroundColor(Color.BLACK);
-            name.setTextColor(Color.WHITE);
-            time.setTextColor(Color.WHITE);
-            root3.setBackgroundColor(Color.BLACK);
+            root1.setBackgroundColor(Color.parseColor("#000000"));
+            root2.setBackgroundColor(Color.parseColor("#000000"));
+            name.setTextColor(Color.parseColor("#FFFFFF"));
+            time.setTextColor(Color.parseColor("#FFFFFF"));
+            root3.setBackgroundColor(Color.parseColor("#000000"));
 
 
         }else{
-            root1.setBackgroundColor(Color.WHITE);
-            root2.setBackgroundColor(Color.WHITE);
-            name.setTextColor(Color.BLACK);
-            time.setTextColor(Color.BLACK);
-            root3.setBackgroundColor(Color.WHITE);
+            root1.setBackgroundColor(Color.parseColor("#FFFFFF"));
+            root2.setBackgroundColor(Color.parseColor("#FFFFFF"));
+            name.setTextColor(Color.parseColor("#000000"));
+            time.setTextColor(Color.parseColor("#000000"));
+            root3.setBackgroundColor(Color.parseColor("#FFFFFF"));
         }
 
     }
@@ -552,6 +566,7 @@ public class MainActivity extends AppCompatActivity {
                         if (!name.equals("")) {
                             Note note = new Note(name, detail, date, checked);
                             notes.add(note);
+                            checkNotify(note);
                             counter++;
                         }
                         break;
@@ -582,5 +597,5 @@ public class MainActivity extends AppCompatActivity {
 // - abgelaufene Tasks in roter Schrift
 // - preferences (Anzeige mit abgelaufenen / ohne abgelaufenen Tasks)
 
-//- pushnotification funktioniert nicht ganz
+//- pushnotification funktioniert nicht ganz / Toast stattdessen
 //- darktheme auch noch nicht ganz

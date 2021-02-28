@@ -59,17 +59,19 @@ public class ListViewAdapter extends BaseAdapter {
         ((TextView) listItem.findViewById(R.id.note)).setText(note.getName());
         cb.setChecked(note.getChecked());
 
+
         if (note.getDatebis().compareTo(date) < 0) {
             TextView time = listItem.findViewById(R.id.time);
             time.setTextColor(Color.RED);
             TextView name = listItem.findViewById(R.id.note);
             name.setTextColor(Color.RED);
 
-        } else if (DateUtils.isToday(note.getDatebis().getTime())) {
-            MainActivity ma = new MainActivity();
-            ma.notifyDate(note);
         }
+
+
 
         return listItem;
     }
+
+
 }
