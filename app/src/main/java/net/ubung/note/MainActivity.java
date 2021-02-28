@@ -285,18 +285,23 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout ll = new LinearLayout(this);
         ll.setOrientation(LinearLayout.VERTICAL);
         TextView date = new TextView(this);
+        date.setPadding(60,40,40,0);
         date.setText("Date: " + temp.getFullDateString());
         TextView titel = new TextView(this);
+        titel.setPadding(60,40,40,0);
         titel.setText("Title: " + temp.getName());
         TextView detail = new TextView(this);
         detail.setText("Detail: " + temp.getDetail());
+        detail.setPadding(60,40,40,0);
         TextView checked = new TextView(this);
         checked.setText("Done: " + String.valueOf(temp.getChecked()));
+        checked.setPadding(60,40,40,40);
 
 
         ll.addView(date);
         ll.addView(titel);
         ll.addView(detail);
+        ll.addView(checked);
 
         new AlertDialog.Builder(this)
                 .setTitle("Details")
