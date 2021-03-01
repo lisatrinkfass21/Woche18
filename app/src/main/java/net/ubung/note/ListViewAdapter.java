@@ -3,6 +3,7 @@ package net.ubung.note;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
@@ -59,6 +60,22 @@ public class ListViewAdapter extends BaseAdapter {
         ((TextView) listItem.findViewById(R.id.note)).setText(note.getName());
         cb.setChecked(note.getChecked());
 
+        if(MainActivity.darkOn){
+            listItem.setBackgroundColor(Color.BLACK);
+            TextView time = listItem.findViewById(R.id.time);
+            time.setTextColor(Color.WHITE);
+            TextView name = listItem.findViewById(R.id.note);
+            name.setTextColor(Color.WHITE);
+            cb.setButtonTintList(ColorStateList.valueOf(Color.WHITE));
+        }else{
+            listItem.setBackgroundColor(Color.WHITE);
+            TextView time = listItem.findViewById(R.id.time);
+            time.setTextColor(Color.BLACK);
+            TextView name = listItem.findViewById(R.id.note);
+            name.setTextColor(Color.BLACK);
+            cb.setButtonTintList(ColorStateList.valueOf(Color.BLACK));
+        }
+
 
         if (note.getDatebis().compareTo(date) < 0) {
             TextView time = listItem.findViewById(R.id.time);
@@ -67,6 +84,8 @@ public class ListViewAdapter extends BaseAdapter {
             name.setTextColor(Color.RED);
 
         }
+
+
 
 
 

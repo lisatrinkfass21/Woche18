@@ -14,13 +14,19 @@
         android:id="@+id/listView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:backgroundTint="@null" />
+        app:backgroundTint="@null"
+        android:transcriptMode="normal"/>
 
     <Button
         android:id="@+id/delete_selected_rows"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Remove Selected Rows"/>
+        android:background="@drawable/shape"
+        android:text="Remove Selected Rows"
+        android:layout_gravity="end"
+        android:layout_margin="30sp"
+        android:padding="10sp"
+       />
 
 
 </LinearLayout>

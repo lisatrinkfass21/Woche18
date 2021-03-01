@@ -1,33 +1,27 @@
 package net.ubung.note;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.core.app.NotificationCompat;
-import androidx.preference.PreferenceManager;
-
+import android.Manifest;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
-import android.app.UiModeManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.AssetManager;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.format.DateUtils;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -39,34 +33,37 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.preference.PreferenceManager;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.text.ParseException;
-import java.time.Month;
-import java.time.Year;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
-import java.util.logging.Level;
+
 
 public class MainActivity extends AppCompatActivity {
 
-    private final static String FILE = "notes.txt";
+    public static boolean darkOn = false;
+
+    public final static String FILE = "notes.json";
     ListViewAdapter lva;
     List<Note> notes = new ArrayList<>();
 
@@ -76,15 +73,27 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private SharedPreferences.OnSharedPreferenceChangeListener prefsChangeListener;
 
+    private static final int RQ_WRITE_STORAGE = 12345;
+    GsonBuilder builder = new GsonBuilder();
+    Gson gson = builder.create();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         lv = findViewById(R.id.listView);
         registerForContextMenu(lv);
-        loadNotes();
+        loadFromSD();
         Collections.sort(notes);
         bindAdapterToListView(lv);
+
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.LOLLIPOP){
+            Window window = getWindow();
+            window.setStatusBarColor(Color.parseColor("#87CEFA"));
+            System.out.println("set");
+        }
+
+
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefsChangeListener = (sharedPrefs, key) -> preferenceChanged(sharedPrefs, key);
@@ -130,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         Collections.sort(notes);
                         bindAdapterToListView(lv);
-                        saveNotes();
+                        printInput();
                     }
                 });
                 alertDialog.show();
@@ -138,6 +147,27 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+    }
+
+
+    public void printInput(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED){
+                requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, RQ_WRITE_STORAGE);
+            }else{
+                saveInSD();
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(grantResults.length>0&&grantResults[0]!=PackageManager.PERMISSION_GRANTED){
+            Toast.makeText(this, "SD Dard Permission verweigert", Toast.LENGTH_LONG).show();
+        }else{
+            saveInSD();
+        }
     }
 
     public void checkNotify(Note note){
@@ -164,8 +194,8 @@ public class MainActivity extends AppCompatActivity {
     private void preferenceChanged(SharedPreferences sharedPrefs, String key) {
 
         boolean value = sharedPrefs.getBoolean(key, false);
-        if (key.equals("Darktmode")) {
-            setDarkModer(value);
+        if (key.equals("Darkmode")) {
+            setDarkMode(value);
         } else if (key.equals("anzeigeDateBefore")) {
             temp.addAll(anzeigeDatebefore(value, temp));
 
@@ -203,29 +233,23 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    private void setDarkModer(boolean value) {//funktioniert noch nicht
+    private void setDarkMode(boolean value) {
         View mainView = findViewById(R.id.screen1);
-        View settingsview = findViewById(R.id.screen2);
-        View listviewitem = findViewById(R.id.screen3);
         View root1 = mainView.getRootView();
-        View root2  = listviewitem.getRootView();
-        View root3 = settingsview.getRootView();
-        TextView time = findViewById(R.id.time);
-        TextView name = findViewById(R.id.note);
+        lv = findViewById(R.id.listView);
+        System.out.println("1");
         if(value) {
+            darkOn = true;
             root1.setBackgroundColor(Color.parseColor("#000000"));
-            root2.setBackgroundColor(Color.parseColor("#000000"));
-            name.setTextColor(Color.parseColor("#FFFFFF"));
-            time.setTextColor(Color.parseColor("#FFFFFF"));
-            root3.setBackgroundColor(Color.parseColor("#000000"));
-
+            bindAdapterToListView(lv);
+            System.out.println("2");
 
         }else{
+            darkOn = false;
             root1.setBackgroundColor(Color.parseColor("#FFFFFF"));
-            root2.setBackgroundColor(Color.parseColor("#FFFFFF"));
-            name.setTextColor(Color.parseColor("#000000"));
-            time.setTextColor(Color.parseColor("#000000"));
-            root3.setBackgroundColor(Color.parseColor("#FFFFFF"));
+            bindAdapterToListView(lv);
+            System.out.println("3");
+
         }
 
     }
@@ -243,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
         switch (id) {
             case R.id.save:
-                saveNotes();
+                printInput();
                 break;
             case R.id.add:
                 addNote();
@@ -396,7 +420,7 @@ public class MainActivity extends AppCompatActivity {
                         lv = findViewById(R.id.listView);
                         Collections.sort(notes);
                         bindAdapterToListView(lv);
-                        saveNotes();
+                        printInput();
 
                     } catch (ParseException e) {
                     }
@@ -411,7 +435,7 @@ public class MainActivity extends AppCompatActivity {
     private void deleteNote(int position) {
         notes.remove(position);
         bindAdapterToListView(lv);
-        saveNotes();
+        printInput();
 
     }
 
@@ -505,7 +529,7 @@ public class MainActivity extends AppCompatActivity {
                             lv = findViewById(R.id.listView);
                             Collections.sort(notes);
                             bindAdapterToListView(lv);
-                            saveNotes();
+                            printInput();
                         }
 
 
@@ -519,8 +543,55 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void saveNotes() {
+    private void saveInSD(){
+        String state = Environment.getExternalStorageState();
+        if(!state.equals(Environment.MEDIA_MOUNTED))return;
+        File output = getExternalFilesDir(null);
+        String path = output.getAbsolutePath();
+        String fullPath = path+File.separator+FILE;
+        try {
+            Gson gson = new Gson();
+            PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(fullPath)));
+            out.print(gson.toJson(notes));
+            out.flush();
+            out.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
+
+    }
+
+    private void loadFromSD(){
+        String state = Environment.getExternalStorageState();
+        if (!(state.equals(Environment.MEDIA_MOUNTED))) {
+            Toast.makeText(this, "There is no any sd card", Toast.LENGTH_LONG).show();}else{
+            BufferedReader reader = null;
+            try{
+                File file = getExternalFilesDir(null);
+                File textFile = new File(file.getAbsolutePath()+File.separator+FILE);
+                reader = new BufferedReader(new FileReader(textFile));
+                String line = reader.readLine();
+                Gson gson = new Gson();
+                notes.clear();
+                TypeToken<List<Note>> token = new TypeToken<List<Note>>(){};
+                notes.addAll(gson.fromJson(line, token.getType()));
+                Toast.makeText(this, "loaded from SD", Toast.LENGTH_LONG).show();
+
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+
+    /*
+
+    private void saveNotes() {//old version ... eigenes layout
         try {
             FileOutputStream fos = openFileOutput(FILE, MODE_PRIVATE);
             PrintWriter out = new PrintWriter(new OutputStreamWriter(fos));
@@ -543,7 +614,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void loadNotes() {
+    private void loadNotes() { //old version ... eigenes layout
         String name = "";
         Date date = new Date();
         boolean checked = false;
@@ -593,7 +664,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "noch keine Tasks vorhanden", Toast.LENGTH_LONG).show();
         }
 
-    }
+    }*/
 }
 
 //bonus:
@@ -603,4 +674,4 @@ public class MainActivity extends AppCompatActivity {
 // - preferences (Anzeige mit abgelaufenen / ohne abgelaufenen Tasks)
 
 //- pushnotification funktioniert nicht ganz / Toast stattdessen
-//- darktheme auch noch nicht ganz
+//- darktheme funktioniert
